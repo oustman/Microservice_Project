@@ -1,0 +1,75 @@
+# docker-compose.yml
+# Version of the Docker Compose file format.
+
+# Defines the services (containers) that make up your application's backend infrastructure.
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:14-alpine # Use a specific, lightweight version of the Postgres image.
+    container_name: postgres_db
+    ports:
+      - "5432:5432" # Map port 5432 on your local machine to port 5432 in the container.
+    environment:
+      - POSTGRES_USER=admin # Set the database username.
+      - POSTGRES_PASSWORD=password # Set the database password.
+      - POSTGRES_DB=user_service_db,booking_service_db # You can create multiple DBs on startup.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist database data on your local machine.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d user_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB Database Service
+  mongo:
+    image: mongo:5.0 # Use a specific version of the Mongo image.
+    container_name: mongo_db
+    ports:
+      - "27017:27017" # Map the default MongoDB port.
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo_data:/data/db # Persist MongoDB data.
+
+  # Redis Caching Service
+  redis:
+    image: redis:6-alpine # Use a specific, lightweight version of the Redis image.
+    container_name: redis_cache
+    ports:
+      - "6379:6379" # Map the default Redis port.
+    volumes:
+      - redis_data:/data # Persist Redis data.
+
+  # Zookeeper Service (Required for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # Kafka Message Broker Service
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka_broker
+    ports:
+      # Exposes Kafka for connections from your local machine (e.g., your Spring Boot apps).
+      - "9092:9092"
+    depends_on:
+      - zookeeper # Kafka will not start until Zookeeper is running.
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      # This listener is for communication WITHIN the Docker network.
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+# Volumes are used to persist data even if the containers are removed.
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
