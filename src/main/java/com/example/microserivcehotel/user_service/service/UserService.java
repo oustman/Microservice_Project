@@ -14,6 +14,7 @@ import jakarta.security.auth.message.AuthException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,26 +29,39 @@ public class UserService {
 
 
     @Autowired
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
+    private PasswordEncoder bCryptPasswordEncoder;
 
-    private UserResponseDTO regsiterDTO(SignUpDTO signUpDTO){
-        log.info("Regisetring The User for " + signUpDTO.getName());
+    public UserResponseDTO regsiterDTO(SignUpDTO signUpDTO){
+        log.info("Registering The User for " + signUpDTO.getName());
         if (! PasswordPolicyValidator.isValid(signUpDTO.getPassword())){
             throw new InvalidPassWordException("Password Is Not Valid Check The character & Length");
         }
         User user = UserMapperInterface.INSTANCE.dtoToEntity(signUpDTO);
-        user.setPassWord(bCryptPasswordEncoder.encode(signUpDTO.getPassword()));
+        user.setPassword(bCryptPasswordEncoder.encode(signUpDTO.getPassword()));
         User savedUser = userRepo.save(user);
         return UserMapperInterface.INSTANCE.entityToResponse(savedUser);
     }
 
     public String login(LoginDTO loginDTO) throws AuthException {
+        log.info("Logging The User with Email  " + loginDTO.getEmail());
          User user =   userRepo.findByEmail(loginDTO.getEmail()).orElseThrow(() -> new AuthException("Email Doesn't Exist"));
-        if (!bCryptPasswordEncoder.matches(loginDTO.getPassword(), user.getPassWord())) {
+        if (!bCryptPasswordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
             throw new AuthException("Invalid credentials");
         }
 
+        log.info("User Logged In With their Credential Now Generating token :");
         return jwtUtils.jwtToken(user.getEmail());
+
+    }
+
+    public  String extractEmailFromToken(String email){
+       return jwtUtils.extractEmail(
+               email.replace("Bearer " , " "));
+    }
+
+    public UserResponseDTO findByEmail(String email) throws AuthException {
+        User user = userRepo.findByEmail(email).orElseThrow(() -> new AuthException("Email Doesn't Exist"));
+        return UserMapperInterface.INSTANCE.entityToResponse(user);
 
     }
 }

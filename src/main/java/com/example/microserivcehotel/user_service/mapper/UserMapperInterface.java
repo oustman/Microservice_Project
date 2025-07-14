@@ -30,8 +30,4 @@ public interface UserMapperInterface {
     UserResponseDTO entityToResponse(User user);
 
 
-
-
-
-
 }

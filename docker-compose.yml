@@ -8,11 +8,11 @@ services:
     image: postgres:14-alpine # Use a specific, lightweight version of the Postgres image.
     container_name: postgres_db
     ports:
-      - "5432:5432" # Map port 5432 on your local machine to port 5432 in the container.
+      - "5433:5432" # Map port 5432 on your local machine to port 5432 in the container.
     environment:
       - POSTGRES_USER=admin # Set the database username.
       - POSTGRES_PASSWORD=password # Set the database password.
-      - POSTGRES_DB=user_service_db,booking_service_db # You can create multiple DBs on startup.
+      - POSTGRES_DB=user_service_db # You can create multiple DBs on startup.
     volumes:
       - postgres_data:/var/lib/postgresql/data # Persist database data on your local machine.
     healthcheck:
