@@ -8,13 +8,14 @@ import io.jsonwebtoken.security.Keys;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
-@Service
+@Component
 public class JwtSecurityConfig {
 
     // Generate a fixed 384-bit key (run once and save the value)
